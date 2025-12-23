@@ -1,6 +1,4 @@
 
-const supabase = createClient('https://xeafepvajcaloumjmpoe.supabase.co', 'sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB');
-console.log(supabase);
 const Login = document.getElementById('Login');
 
 const name = document.getElementById('name');
@@ -12,5 +10,6 @@ Login.onclick = () =>{
       
 
 }
+
 
 
