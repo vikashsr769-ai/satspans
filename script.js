@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 const supabase = createClient('https://xeafepvajcaloumjmpoe.supabase.co', 'sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB');
-Console.log(supabase);
+console.log(supabase);
 const Login = document.getElementById('Login');
 
 const name = document.getElementById('name');
@@ -12,3 +12,4 @@ Login.onclick = () =>{
       
 
 }
+
