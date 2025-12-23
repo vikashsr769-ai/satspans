@@ -6,15 +6,11 @@
 <title>Final Year Project</title>
 
 <!-- Supabase -->
-<script type="importmap">
-  {
-    "imports": {
-      "@supabase/supabase-js": "esm.sh"
-      // or a local path if you are using a server that serves node_modules
-    }
-  }
+<script>
+const supabase = createClient('https://xeafepvajcaloumjmpoe.supabase.co', 'sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB');
+console.log(supabase);
 </script>
-<script type="module" src="./script.js"></script>
+<script defer src="script.js"></script>
 
 <!-- Modern Stylish CSS -->
 <style>
