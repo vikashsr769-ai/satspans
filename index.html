@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+https://github.com/vikashsr769-ai/satspans/tree/main<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,17 @@
 <title>Final Year Project</title>
 
 <!-- Supabase -->
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+//or
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+ import { createClient } from '@supabase/supabase-js'
+const supabaseUrl = 'https://xeafepvajcaloumjmpoe.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
+// Create a single supabase client for interacting with your database
+//const supabase = createClient('https://xyzcompany.supabase.co', 'publishable-or-anon-key')   
+</script>
 
 <!-- External Script -->
 <script defer src="script.js"></script>
@@ -133,5 +143,6 @@ input::placeholder {
 
 </body>
 </html>
+
 
 
