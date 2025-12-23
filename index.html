@@ -6,9 +6,15 @@
 <title>Final Year Project</title>
 
 <!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- External Script -->
-<script defer type="module" src="script.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "@supabase/supabase-js": "esm.sh"
+      // or a local path if you are using a server that serves node_modules
+    }
+  }
+</script>
+<script type="module" src="./script.js"></script>
 
 <!-- Modern Stylish CSS -->
 <style>
@@ -131,6 +137,7 @@ input::placeholder {
 
 </body>
 </html>
+
 
 
 
