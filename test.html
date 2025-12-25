@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online MCQ Test</title>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- html2pdf -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
+    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* ---------- MAIN CONTAINER ---------- */
+.container {
+    width: 100%;
+    max-width: 900px;
+    background: rgba(0,0,0,0.7);
+    padding: 25px;
+    border-radius: 15px;
+}
+
+/* ---------- HEADINGS ---------- */
+h1 {
+    text-align: center;
+    color: #0099ff;
+    margin-bottom: 20px;
+    font-size: 28px;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* ---------- QUESTIONS ---------- */
+.question-block {
+    margin-bottom: 18px;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    page-break-inside: avoid;
+}
+
+.question-block h3 {
+    color: #0099ff;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+input[type="radio"] {
+    transform: scale(1.2);
+}
+
+/* ---------- BUTTON ---------- */
+.btn {
+    background: #0099ff;
+    color: white;
+    padding: 14px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    display: block;
+    margin: 25px auto;
+    width: fit-content;
+}
+
+/* ---------- RESULT ---------- */
+#result-container {
+    margin-top: 35px;
+    padding: 20px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    page-break-inside: avoid;
+}
+
+#studentInfo,
+#marksText {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 17px;
+}
+
+/* ---------- CHART ---------- */
+.chart-box {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    margin: 20px auto;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 24px;
+    }
+
+    .container {
+        padding: 18px;
+    }
+
+    .question-block h3 {
+        font-size: 16px;
+    }
+
+    label {
+        font-size: 15px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    #studentInfo,
+    #marksText {
+        font-size: 15px;
+    }
+
+    input[type="radio"] {
+        transform: scale(1.1);
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container" id="pdfContent">
+
+<h1>Online MCQ Test</h1>
+
+<form id="mcqForm"></form>
+
+<button class="btn" onclick="submitTest()">Submit Test</button>
+
+<div id="result-container">
+    <h2>Result Summary</h2>
+
+    <div id="studentInfo"></div>
+    <div id="marksText"></div>
+
+    <div class="chart-box">
+        <canvas id="resultChart" width="300" height="300"></canvas>
+    </div>
+
+    <button class="btn" onclick="downloadPDF()">Save as PDF</button>
+</div>
+
+</div>
+
+<script>
+// -------- STUDENT DETAILS --------
+const studentName = prompt("Enter Student Name");
+const rollNo = prompt("Enter Roll No");
+const facultyEmail = prompt("Enter Faculty Email");
+
+// -------- SUPABASE --------
+const supabaseUrl = 'https://xeafepvajcaloumjmpoe.supabase.co';
+const supabaseKey = 'sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+let questions = [];
+
+// -------- LOAD QUESTIONS --------
+async function loadQuestions() {
+    const { data, error } = await supabaseClient
+        .from('Questions')
+        .select('*')
+        .eq('FacultyEmail', facultyEmail);
+
+    if (error) {
+        alert("Error loading questions");
+        return;
+    }
+
+    questions = data;
+    const form = document.getElementById("mcqForm");
+
+    data.forEach((q, idx) => {
+        const div = document.createElement("div");
+        div.className = "question-block";
+        div.innerHTML = `
+            <h3>Q${idx + 1}. ${q.Question}</h3>
+            <label><input type="radio" name="q${idx}" value="Option1"> ${q.Option1}</label>
+            <label><input type="radio" name="q${idx}" value="Option2"> ${q.Option2}</label>
+            <label><input type="radio" name="q${idx}" value="Option3"> ${q.Option3}</label>
+            <label><input type="radio" name="q${idx}" value="Option4"> ${q.Option4}</label>
+        `;
+        form.appendChild(div);
+    });
+}
+
+// -------- SUBMIT TEST --------
+function submitTest() {
+    let correct = 0;
+
+    questions.forEach((q, idx) => {
+        const options = document.querySelectorAll(`input[name="q${idx}"]`);
+        let selected = null;
+
+        options.forEach(opt => {
+            opt.disabled = true;
+            if (opt.checked) selected = opt.value;
+
+            if (opt.value === q.Answer) {
+                opt.parentElement.style.color = "#00ff99";
+                opt.parentElement.style.fontWeight = "bold";
+            }
+
+            if (opt.checked && opt.value !== q.Answer) {
+                opt.parentElement.style.color = "#ff4444";
+            }
+        });
+
+        if (selected === q.Answer) correct++;
+    });
+
+    const total = questions.length;
+    const wrong = total - correct;
+
+    document.getElementById("studentInfo").innerHTML =
+        `Student Name: <b>${studentName}</b><br>Roll No: <b>${rollNo}</b>`;
+
+    document.getElementById("marksText").innerHTML =
+        `Marks Obtained: <b>${correct} / ${total}</b>`;
+
+    new Chart(document.getElementById("resultChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Correct", "Wrong"],
+            datasets: [{
+                data: [correct, wrong],
+                backgroundColor: ["#0099ff", "#ff4444"]
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                legend: {
+                    labels: { color: "white" }
+                }
+            }
+        }
+    });
+}
+
+// -------- PDF DOWNLOAD (PERFECT ALIGNMENT) --------
+function downloadPDF() {
+    const element = document.getElementById("pdfContent");
+
+    html2pdf()
+        .from(element)
+        .set({
+            margin: [0.5, 0.5],
+            filename: `${studentName}_${rollNo}_MCQ_Result.pdf`,
+            html2canvas: {
+                scale: 2,
+                scrollY: 0
+            },
+            jsPDF: {
+                unit: "in",
+                format: "a4",
+                orientation: "portrait"
+            },
+            pagebreak: {
+                mode: ['avoid-all', 'css', 'legacy']
+            }
+        })
+        .save();
+        alert("Result Downloaded Succesfully");
+}
+
+// -------- INIT --------
+loadQuestions();
+</script>
+
+</body>
+</html>

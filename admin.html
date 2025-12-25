@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Core – Netflix Style</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ===== NETFLIX DESIGN SYSTEM ===== */
+:root{
+  --bg:#000000;
+  --panel:#141414;
+  --panel-soft:#1f1f1f;
+  --border:#2a2a2a;
+  --text:#ffffff;
+  --muted:#b3b3b3;
+  --accent:#0099ff;
+  --radius:14px;
+}
+
+/* RESET */
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI', Arial, sans-serif;}
+body{background:linear-gradient(180deg,#000,#0b0b0b); color:var(--text); display:grid; grid-template-columns:240px 1fr; min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{background:var(--panel); padding:30px 20px; border-right:1px solid var(--border);}
+.brand{font-size:22px; font-weight:800; color:var(--accent); margin-bottom:40px; letter-spacing:1px;}
+.nav a{display:block; padding:14px 18px; border-radius:10px; color:var(--muted); text-decoration:none; margin-bottom:10px; transition:.3s;}
+.nav a.active, .nav a:hover{background:var(--panel-soft); color:#fff;}
+
+/* MAIN */
+.main{padding:40px;}
+.header{display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;}
+.header h1{font-size:35px; font-weight:700;}
+
+/* TABLE AS CARDS */
+.table-wrapper{display:grid; gap:16px;}
+.table-row{background:linear-gradient(135deg,#141414,#1c1c1c); border:1px solid var(--border); border-radius:var(--radius); padding:20px; display:grid; grid-template-columns:1.2fr 1fr 1.6fr 1fr auto; align-items:center; transition:.3s;}
+.table-row:hover{transform:scale(1.01); box-shadow:0 10px 30px rgba(0,0,0,.6); border-color:var(--accent);}
+.cell-title{font-size:12px; color:var(--muted); margin-bottom:4px;}
+.cell-value{font-size:15px; font-weight:500;}
+
+/* ACTION BUTTONS */
+.action-btn{background:var(--accent); border:none; color:#fff; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;}
+.action-btn:hover{background:#fff; color:#0099ff;}
+
+/* DRAWER */
+.drawer{position:fixed; top:0; right:-500px; width:500px; height:100%; background:linear-gradient(180deg,#141414,#000); border-left:1px solid var(--border); padding:40px 30px; transition:.4s ease; z-index:100;}
+.drawer.open{ right:0; }
+.drawer h2{margin-bottom:30px; font-size:24px;}
+.drawer label{font-size:12px; color:var(--muted);}
+.drawer input, .drawer select{width:100%; padding:12px; margin:8px 0 18px; border-radius:10px; border:1px solid var(--border); background:#0f0f0f; color:#fff;}
+.drawer-actions{display:flex; gap:12px; margin-top:10px;}
+.save{flex:1; background:var(--accent); border:none; padding:12px; border-radius:10px; font-weight:600; cursor:pointer;}
+.cancel{flex:1; background:#333; border:none; padding:12px; border-radius:10px; color:#fff; cursor:pointer;}
+
+/* RESPONSIVE */
+@media(max-width:900px){body{grid-template-columns:1fr} .sidebar{display:none}}
+</style>
+</head>
+<body>
+
+
+<aside class="sidebar">
+  <div class="brand">ADMIN•CORE</div>
+  <nav class="nav">
+    <a class="active">👤 Faculty Profile Management</a>
+  </nav>
+</aside>
+
+
+<main class="main">
+  <div class="header">
+    <h1>Faculty Profile Management</h1>
+    <button class="action-btn" onclick="openDrawerNew()">+ Add Faculty</button>
+    <button class="action-btn" onclick="logout()">Logout</button> <!-- Logout button -->
+  </div>
+  <div class="table-wrapper" id="list"></div>
+</main>
+
+
+<div class="drawer" id="drawer">
+  <h2 id="drawer-title">Edit Faculty</h2>
+
+  <label>Name</label>
+  <input id="d_name">
+
+  <label>Role</label>
+  <select id="d_role">
+    <option>Admin</option>
+    <option>Faculty</option>
+  </select>
+
+  <label>Email</label>
+  <input id="d_email">
+
+  <label>Password</label>
+  <input id="d_password" type="password">
+
+  <div class="drawer-actions">
+    <button class="save" onclick="save()">Save</button>
+    <button class="cancel" onclick="closeDrawer()">Cancel</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+var SUPABASE_URL,SUPABASE_KEY;
+
+SUPABASE_URL='https://xeafepvajcaloumjmpoe.supabase.co';
+SUPABASE_KEY='sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB';
+        
+
+  const supabase1 = supabase.createClient(
+  SUPABASE_URL,SUPABASE_KEY
+  );
+let users = [];
+let currentIndex = null;
+let isNew = false;
+
+// ===== FETCH DATA =====
+async function fetchData() {
+  const { data, error } = await supabase1
+    .from('FacultyAuth')
+    .select('*');
+  if (error) return console.error(error);
+  users = data;
+  render();
+}
+
+// ===== RENDER TABLE =====
+function render() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  users.forEach((u, i) => {
+    list.innerHTML += `
+      <div class="table-row">
+        <div><div class="cell-title">Name</div><div class="cell-value">${u.Name}</div></div>
+        <div><div class="cell-title">Role</div><div class="cell-value">${u.Role}</div></div>
+        <div><div class="cell-title">Email</div><div class="cell-value">${u.Email}</div></div>
+        <div><div class="cell-title">Password</div><div class="cell-value">${u.Password}</div></div>
+        <div style="display:flex;gap:6px;">
+          <button class="action-btn" onclick="edit(${i})">Edit</button>
+          <button class="action-btn" style="background:#ff3333;" onclick="del('${u.Email}')">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// ===== EDIT / OPEN DRAWER =====
+function edit(i){
+  currentIndex = i;
+  isNew = false;
+  document.getElementById("drawer-title").innerText = "Edit Faculty";
+  const u = users[i];
+  d_name.value = u.Name;
+  d_role.value = u.Role;
+  d_email.value = u.Email;
+  d_password.value = u.Password;
+  drawer.classList.add("open");
+}
+
+// ===== NEW USER =====
+function openDrawerNew() {
+  isNew = true;
+  document.getElementById("drawer-title").innerText = "Add Faculty";
+  d_name.value = "";
+  d_role.value = "User";
+  d_email.value = "";
+  d_password.value = "";
+  drawer.classList.add("open");
+}
+
+// ===== SAVE (CREATE / UPDATE) =====
+async function save() {
+  const payload = {
+    Name: d_name.value,
+    Role: d_role.value,
+    Email: d_email.value,
+    Password: d_password.value
+  };
+
+  if(isNew){
+    const { data, error } = await supabase1
+      .from('FacultyAuth')
+      .insert([payload]);
+    if(error) return console.error(error);
+  } else {
+    const { data, error } = await supabase1
+      .from('FacultyAuth')
+      .update(payload)
+      .eq('id', users[currentIndex].id);
+    if(error) return console.error(error);
+  }
+
+  closeDrawer();
+  fetchData();
+}
+
+// ===== DELETE =====
+async function del(a){
+  if(!confirm("Are you sure you want to delete this faculty?")) return;
+  const { data, error } = await supabase1
+    .from('FacultyAuth')
+    .delete()
+    .eq('Email', a);
+  if(error) return console.error(error);
+  fetchData();
+}
+
+// ===== CLOSE DRAWER =====
+function closeDrawer() {
+  drawer.classList.remove("open");
+}
+
+// ===== INITIAL FETCH =====
+fetchData();
+
+function logout() {
+  // Clear any session storage if you use it
+  sessionStorage.clear();
+
+  // Redirect to login page
+  window.location.href = "index.html";
+}
+
+</script>
+</body>
+</html>

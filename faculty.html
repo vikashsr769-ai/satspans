@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Faculty Dashboard – Questions Management</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+  --bg:#000000;
+  --panel:#141414;
+  --panel-soft:#1f1f1f;
+  --border:#2a2a2a;
+  --text:#ffffff;
+  --muted:#b3b3b3;
+  --accent:#0099ff;
+  --radius:14px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI', Arial, sans-serif;}
+body{background:linear-gradient(180deg,#000,#0b0b0b); color:var(--text); display:grid; grid-template-columns:240px 1fr; min-height:100vh;}
+
+.sidebar{background:var(--panel); padding:30px 20px; border-right:1px solid var(--border);}
+.brand{font-size:22px; font-weight:800; color:var(--accent); margin-bottom:40px; letter-spacing:1px;}
+.nav a{display:block; padding:14px 18px; border-radius:10px; color:var(--muted); text-decoration:none; margin-bottom:10px; transition:.3s;}
+.nav a.active, .nav a:hover{background:var(--panel-soft); color:#fff;}
+
+.main{padding:40px;}
+.header{display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;}
+.header h1{font-size:35px; font-weight:700;}
+
+.table-wrapper{display:grid; gap:16px;}
+.table-row{background:linear-gradient(135deg,#141414,#1c1c1c); border:1px solid var(--border); border-radius:var(--radius); padding:20px; display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr auto; align-items:center; transition:.3s;}
+.table-row:hover{transform:scale(1.01); box-shadow:0 10px 30px rgba(0,0,0,.6); border-color:var(--accent);}
+.cell-title{font-size:12px; color:var(--muted); margin-bottom:4px;}
+.cell-value{font-size:15px; font-weight:500;}
+
+.action-btn{background:var(--accent); border:none; color:#fff; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;margin-left:10%; }
+.action-btn:hover{background:#fff; color:#0099ff;}
+
+.drawer{position:fixed; top:0; right:-550px; width:550px; height:100%; background:linear-gradient(180deg,#141414,#000); border-left:1px solid var(--border); padding:40px 30px; transition:.4s ease; z-index:100;}
+.drawer.open{ right:0; }
+.drawer h2{margin-bottom:30px; font-size:24px;}
+.drawer label{font-size:12px; color:var(--muted);}
+.drawer input{width:100%; padding:10px; margin:1px 0 10px; border-radius:10px; border:1px solid var(--border); background:#0f0f0f; color:#fff;}#d_answer { width:100%; padding:10px; margin:1px 0 10px; border-radius:10px; border:1px solid var(--border); background:#0f0f0f; color:#fff; font-family:'Segoe UI', Arial, sans-serif; font-size:14px; appearance:none; -webkit-appearance:none; -moz-appearance:none; cursor:pointer; } #d_answer option { background:#0f0f0f; color:#fff; }
+#d_facultyemail{padding:8px;background:#ddd; color:#000;}
+.drawer-actions{display:flex; gap:12px; margin-top:10px;}
+.save{flex:1; background:var(--accent); border:none; padding:12px; border-radius:10px; font-weight:600; cursor:pointer;}
+.cancel{flex:1; background:#333; border:none; padding:12px; border-radius:10px; color:#fff; cursor:pointer;}
+
+@media(max-width:900px){body{grid-template-columns:1fr} .sidebar{display:none}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">FACULTY•CORE</div>
+  <nav class="nav">
+    <a class="active" id="facultyname"></a>
+    <a class="active">📝 Faculty Questions Management </a>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="header">
+    <h1>Faculty Questions Management </h1>
+    <button class="action-btn" onclick="openDrawerNew()">+ Add Question</button>    
+    <button class="action-btn" onclick="logout()">Logout</button> <!-- Logout button -->
+  </div>
+  <div class="table-wrapper" id="list"></div>
+</main>
+
+<div class="drawer" id="drawer">
+  <h2 id="drawer-title">Edit Question</h2>
+  <input style="display:none;" id="d_facultyemail" readonly>
+
+  <label>Question</label>
+  <input id="d_question">
+
+  <label>Option 1</label>
+  <input id="d_option1">
+
+  <label>Option 2</label>
+  <input id="d_option2">
+
+  <label>Option 3</label>
+  <input id="d_option3">
+
+  <label>Option 4</label>
+  <input id="d_option4">
+
+<label>Correct Answer</label>
+<select id="d_answer">
+  <option value="">Select Correct Option</option>
+  <option value="Option1">Option 1</option>
+  <option value="Option2">Option 2</option>
+  <option value="Option3">Option 3</option>
+  <option value="Option4">Option 4</option>
+</select>
+
+
+  <div class="drawer-actions">
+    <button class="save" onclick="save()">Save</button>
+    <button class="cancel" onclick="closeDrawer()">Cancel</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+var SUPABASE_URL,SUPABASE_KEY;
+
+SUPABASE_URL='https://xeafepvajcaloumjmpoe.supabase.co';
+SUPABASE_KEY='sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB';
+        
+
+  const supabase1 = supabase.createClient(
+  SUPABASE_URL,SUPABASE_KEY
+  );
+  // Get email from sessionStorage
+  const facultyEmail = sessionStorage.getItem("email");
+  const role = sessionStorage.getItem("role");
+d_facultyemail.value=facultyEmail;
+  // Security check
+  if (!facultyEmail || role !== "Faculty") {
+    // Not logged in → go back to login
+    window.location.href = "index.html";
+  }
+
+  console.log("Logged in Faculty:", facultyEmail ,"Logged as:", role);
+async function facultyn() {
+    const { data, error1 } = await supabase1
+    .from('FacultyAuth')
+    .select()
+    .eq('Email', facultyEmail)
+    .maybeSingle();
+document.getElementById('facultyname').innerHTML = data.Name;
+}facultyn();
+
+let questions = [];
+let currentIndex = null;
+let isNew = false;
+
+// FETCH QUESTIONS
+async function fetchData() {
+  const { data, error } = await supabase1
+    .from('Questions')
+    .select()
+    .eq('FacultyEmail', facultyEmail);
+  if(error) return console.error(error);
+  questions = data;
+  render();
+}
+
+// RENDER QUESTIONS
+// RENDER QUESTIONS
+function render() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  questions.forEach((q, i) => {
+    list.innerHTML += `
+      <div class="table-row">
+        <div><div class="cell-title">Question</div><div class="cell-value">${q.Question}</div></div>
+        <div><div class="cell-title">Option 1</div><div class="cell-value">${q.Option1}</div></div>
+        <div><div class="cell-title">Option 2</div><div class="cell-value">${q.Option2}</div></div>
+        <div><div class="cell-title">Option 3</div><div class="cell-value">${q.Option3}</div></div>
+        <div><div class="cell-title">Option 4</div><div class="cell-value">${q.Option4}</div></div>
+        <div><div class="cell-title">Answer</div><div class="cell-value">${q.Answer || ''}</div></div>
+        <div style="display:flex; gap:6px;">
+          <button class="action-btn" onclick="edit(${i})">Edit</button>
+          <button class="action-btn" style="background:#ff3333;" onclick="del('${q.Question}')">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+
+// OPEN DRAWER FOR EDIT
+function edit(i) {
+  currentIndex = i;
+  isNew = false;
+  document.getElementById("drawer-title").innerText = "Edit Question";
+  const q = questions[i];
+  d_question.value = q.Question;
+  d_option1.value = q.Option1;
+  d_option2.value = q.Option2;
+  d_option3.value = q.Option3;
+  d_option4.value = q.Option4;
+  d_answer.value = q.Answer || ""; // NEW LINE
+  drawer.classList.add("open");
+}
+
+
+// OPEN DRAWER FOR NEW
+function openDrawerNew() {
+  isNew = true;
+  document.getElementById("drawer-title").innerText = "Add Question";
+  d_question.value = "";
+  d_option1.value = "";
+  d_option2.value = "";
+  d_option3.value = "";
+  d_option4.value = "";
+  d_answer.value = ""; // NEW LINE
+  d_facultyemail.value = facultyEmail;
+  drawer.classList.add("open");
+}
+
+
+// SAVE (CREATE/UPDATE)
+async function save() {
+  const payload = {
+    FacultyEmail: d_facultyemail.value,
+    Question: d_question.value,
+    Option1: d_option1.value,
+    Option2: d_option2.value,
+    Option3: d_option3.value,
+    Option4: d_option4.value,
+    Answer: d_answer.value  // NEW LINE
+  };
+
+  if(isNew){
+    const { error } = await supabase1
+      .from('Questions')
+      .insert([payload]);
+    if(error) return console.error(error);
+  } else {
+    const { error } = await supabase1
+      .from('Questions')
+      .update(payload)
+      .eq('id', questions[currentIndex].id);
+    if(error) return console.error(error);
+  }
+
+  closeDrawer();
+  fetchData();
+}
+
+
+// DELETE QUESTION
+async function del(Question){
+  if(!confirm("Are you sure you want to delete this question?")) return;
+  const { error } = await supabase1
+    .from('Questions')
+    .delete()
+    .eq('Question', Question);
+  if(error) return console.error(error);
+  fetchData();
+}
+
+// CLOSE DRAWER
+function closeDrawer() {
+  drawer.classList.remove("open");
+}
+
+// INITIAL FETCH
+fetchData();
+
+function logout() {
+  // Clear any session storage if you use it
+  sessionStorage.clear();
+
+  // Redirect to login page
+  window.location.href = "index.html";
+}
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Final Year Project - Netflix Theme</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+var SUPABASE_URL,SUPABASE_KEY;
+
+SUPABASE_URL='https://xeafepvajcaloumjmpoe.supabase.co';
+SUPABASE_KEY='sb_publishable_v4-A8g2PFaM__MWxbYjDfg_cA2m3MYB';
+        
+
+  const supabase1 = supabase.createClient(
+  SUPABASE_URL,SUPABASE_KEY
+  );
+
+async function Lg() {
+  const jEmail = document.getElementById('email').value;
+  const jPass = document.getElementById('pass').value;
+  const alertBox = document.getElementById('alert');
+
+  const { data, error1 } = await supabase1
+    .from('FacultyAuth')
+    .select()
+    .eq('Email', jEmail)
+    .maybeSingle();
+
+  if (error1) {
+    alertBox.textContent = error1.message;
+    alertBox.style.color = "#0099ff";
+    return;
+  }
+
+  if (!data) {
+    alertBox.textContent = "Email not found!";
+    alertBox.style.color = "#0099ff";
+    return;
+  }
+
+  if (data.Password === jPass && data.Role === 'Admin') {
+    sessionStorage.setItem("email", data.Email);
+    sessionStorage.setItem("role", "Admin");
+    window.location.href = "admin.html";
+  } 
+  else if (data.Password === jPass && data.Role === 'Faculty') {
+    sessionStorage.setItem("email", data.Email);
+    sessionStorage.setItem("role", "Faculty");
+    window.location.href = "faculty.html";
+  } 
+  else {
+    alertBox.textContent = "Invalid Credentials!";
+    alertBox.style.color = "#0099ff";
+  }
+}
+</script>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body, html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    position: relative;
+}
+
+/* Video background */
+#bg-video {
+    position: fixed;
+    top: 30;
+    left:20;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -1;
+    object-fit: cover;
+    filter: brightness(0.8); /* Darken video for better contrast */
+}
+
+.authen {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.content {
+    width: 400px;
+    background: rgba(0, 0, 0, 0.6); /* Transparent dark background */
+    padding: 40px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px); /* Glass effect */
+    box-shadow: 0 0 30px rgba(0,0,0,0.7);
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #0099ff;
+}
+
+form input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 15px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+form input::placeholder {
+    color: #ccc;
+}
+
+.btnn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 20px;
+    background: #0099ff;
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
+
+.btnn:hover {
+    background: yellow;
+    color: #000;
+    transform: scale(1.03);
+}
+
+.link {
+    text-align: center;
+    color: #ccc;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.alert {
+    margin-top: 15px;
+    color: #0099ff;
+    font-weight: bold;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- Video Background -->
+<video autoplay muted loop id="bg-video">
+    <source src="Ace Your Aptitude Test.mp4" type="video/mp4">
+</video>
+
+<main class="authen">
+    <div class="content">
+        <div class="form" id="regform">
+            <form method="POST" id="LoginForm">
+                <h2>Login</h2>
+                <input type="email" id="email" name="email" placeholder="Enter Email" required>
+                <input type="password" id="pass" name="pass" placeholder="Enter Password" required>
+                <button class="btnn" type="button" id="Login" onclick="Lg()">Login</button>
+            </form>
+            <div class="alert" id="alert"></div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>
